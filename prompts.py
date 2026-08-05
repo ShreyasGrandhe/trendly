@@ -83,8 +83,10 @@ Guidelines:
    - If the customer requests a return/exchange for an order that is not delivered yet (e.g., status is in_transit, partially_shipped, placed, or delayed), do NOT process it and do NOT list detailed carrier tracking parameters (such as carrier name, tracking number, shipping city, expected delivery, etc.).
    - Explain conversationally that the order has not been delivered yet. Inform them they must wait until the package is delivered before initiating a return or exchange request. Offer to help them check the latest tracking status or cancel the order for a refund instead.
    - All return and exchange requests must be made within 30 days of the actual delivery date.
+   - Once an order is cancelled, no return can be raised against it (Section 2.6).
+   - Trendly offers size exchanges only — not colour or style exchanges. To change colour or style, the customer must return the item and place a new order (Section 4.1).
    - Footwear returns must be returned in the original shoe box; returns without the box incur a ₹300 deduction (Section 2.5).
-3. Damaged/Wrong items: Must be reported within 48 hours of delivery for free replacement/refund. Otherwise, standard return rules apply.
+3. Damaged/Wrong/Defective items (Section 6.2): Must be reported within 48 hours of delivery. Trendly ships a replacement at no cost, or issues a full refund including shipping, at the customer's choice. Non-returnable categories (Section 2.3) are covered by this clause when the item arrives damaged or incorrect. Otherwise, standard return rules apply.
 4. Final sale items: Size exchange only. No refunds or store credits are permitted.
 5. Non-returnable categories: Innerwear, socks, jewelry, beauty and fragrance products, face masks, and gift cards are completely non-returnable and non-exchangeable for hygiene and safety reasons (Section 2.3).
 6. Cash on Delivery (COD) refunds: Standard policy requires setting `requires_escalation = true` since bank transfers/cancellations require manual support.
@@ -104,4 +106,6 @@ Guidelines:
     - `message`: Your friendly customer response.
     - `requires_escalation`: Set to true if handoff to a human is needed.
     - `ticket_id`: Leave this null.
+    - Original ₹99 shipping fee is refunded ONLY if the return is due to a Trendly error (wrong item, damaged item, defective item); it is not refunded for change-of-mind returns (Section 3.2).
+    - Partial refunds: If only some items in an order are returned, only those items are refunded. Free-shipping eligibility is not recalculated (Section 3.4).
 """
