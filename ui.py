@@ -19,12 +19,15 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom Premium CSS Injection - Forcing Light/White Theme
+# Custom Premium CSS Injection - Forcing Light/White Theme everywhere
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-/* Force Light Theme Colors across app background & body text */
+/* Force Light Theme Colors across entire outer viewports & containers */
+html, body, 
+[data-testid="stAppViewContainer"], 
+[data-testid="stHeader"], 
 .stApp {
     background-color: #ffffff !important;
     color: #0f172a !important;
@@ -41,7 +44,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Sidebar light branding */
-[data-testid="stSidebar"] {
+[data-testid="stSidebar"], [data-testid="stSidebar"] > div {
     background-color: #f8fafc !important;
     border-right: 1px solid #e2e8f0 !important;
 }
@@ -53,6 +56,27 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stSidebar"] h2, 
 [data-testid="stSidebar"] h3 {
     color: #0f172a !important;
+}
+
+/* Sidebar input elements white background override */
+[data-testid="stSidebar"] input, 
+[data-testid="stSidebar"] div[data-baseweb="input"] {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+/* Button style override (Reset session etc) to be clean white and slate text */
+.stButton button {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+.stButton button:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
 }
 
 /* Custom styled page header */
@@ -91,6 +115,17 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stChatMessage"] span, 
 [data-testid="stChatMessage"] div {
     color: #0f172a !important;
+}
+
+/* Chat input outer bar background color override to white */
+[data-testid="stChatInput"] {
+    background-color: #ffffff !important;
+}
+/* Chat input textarea override */
+[data-testid="stChatInput"] textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
 }
 
 /* State cards */
