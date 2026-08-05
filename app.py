@@ -58,6 +58,15 @@ def chat(request: ChatRequest):
             "intent": None,
             "action": None,
             "reason": None,
+            
+            # Persistent state-driven properties
+            "workflow": None,
+            "requires_order": None,
+            "requires_policy": None,
+            "missing_entity": None,
+            "entities": {},
+            "workflow_status": None,
+            
             "final_response": None,
         }
         
@@ -91,6 +100,14 @@ def chat(request: ChatRequest):
         session_state["action"] = result.get("action")
         session_state["reason"] = result.get("reason")
         
+        # Persist persistent workflow state-driven properties
+        session_state["workflow"] = result.get("workflow")
+        session_state["requires_order"] = result.get("requires_order")
+        session_state["requires_policy"] = result.get("requires_policy")
+        session_state["missing_entity"] = result.get("missing_entity")
+        session_state["entities"] = result.get("entities")
+        session_state["workflow_status"] = result.get("workflow_status")
+        
         # Extract structured response
         final_response: Optional[AgentResponse] = result.get("final_response")
         
@@ -116,6 +133,9 @@ def chat(request: ChatRequest):
         logger.info(f"Intent: {result.get('intent')}")
         logger.info(f"Triage Action: {result.get('action')}")
         logger.info(f"Triage Reason: {result.get('reason')}")
+        logger.info(f"Workflow Status: {result.get('workflow_status')}")
+        logger.info(f"Missing Entity: {result.get('missing_entity')}")
+        logger.info(f"Entities: {result.get('entities')}")
         logger.info(f"Nodes Executed: {', '.join(trace.nodes_executed)}")
         logger.info(f"Tools Executed: {', '.join(trace.tools_executed)}")
         logger.info(f"Execution Order: {' -> '.join(trace.nodes_executed)}")

@@ -35,6 +35,26 @@ class IntakeOutput(BaseModel):
     reason: ReasonEnum = Field(
         description="The debugging/analytical reason for the triage decision."
     )
+    workflow: Optional[str] = Field(
+        None,
+        description="The matched workflow type: 'tracking', 'return', 'refund', 'exchange', 'damaged_item', 'wrong_item', 'lost_parcel', 'cancelled_order', or null."
+    )
+    requires_order: Optional[bool] = Field(
+        None,
+        description="True if the workflow requires looking up order details."
+    )
+    requires_policy: Optional[bool] = Field(
+        None,
+        description="True if the workflow requires looking up store policies."
+    )
+    missing_entity: Optional[str] = Field(
+        None,
+        description="If action == 'respond' because an entity is missing, specify 'order_id' or null."
+    )
+    workflow_status: Optional[str] = Field(
+        None,
+        description="Status: 'waiting_for_user', 'ready', or 'completed'."
+    )
     response: Optional[str] = Field(
         None,
         description="If action == 'respond', this contains the conversational reply to show the user. If action == 'execute_workflow', this must be null."

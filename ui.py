@@ -36,6 +36,15 @@ if session_id not in st.session_state["sessions"]:
         "intent": None,
         "action": None,
         "reason": None,
+        
+        # State-driven persistent fields
+        "workflow": None,
+        "requires_order": None,
+        "requires_policy": None,
+        "missing_entity": None,
+        "entities": {},
+        "workflow_status": None,
+        
         "final_response": None,
     }
 
@@ -47,6 +56,9 @@ st.sidebar.subheader("Active Session State")
 st.sidebar.write(f"**Intent Classifier:** `{session_state['intent'] or 'Unclassified'}`")
 st.sidebar.write(f"**Triage Action:** `{session_state['action'] or 'None'}`")
 st.sidebar.write(f"**Triage Reason:** `{session_state['reason'] or 'None'}`")
+st.sidebar.write(f"**Workflow Status:** `{session_state['workflow_status'] or 'None'}`")
+st.sidebar.write(f"**Missing Entity:** `{session_state['missing_entity'] or 'None'}`")
+st.sidebar.write(f"**Entities:** `{session_state['entities']}`")
 
 if session_state.get("final_response"):
     resp: AgentResponse = session_state["final_response"]
@@ -60,6 +72,14 @@ if st.sidebar.button("Reset Session / Clear History"):
         "intent": None,
         "action": None,
         "reason": None,
+        
+        "workflow": None,
+        "requires_order": None,
+        "requires_policy": None,
+        "missing_entity": None,
+        "entities": {},
+        "workflow_status": None,
+        
         "final_response": None,
     }
     st.rerun()
@@ -107,6 +127,14 @@ if prompt := st.chat_input("Enter your request here (e.g. 'I want to track order
             session_state["action"] = result.get("action")
             session_state["reason"] = result.get("reason")
             
+            # Persist workflow state-driven properties
+            session_state["workflow"] = result.get("workflow")
+            session_state["requires_order"] = result.get("requires_order")
+            session_state["requires_policy"] = result.get("requires_policy")
+            session_state["missing_entity"] = result.get("missing_entity")
+            session_state["entities"] = result.get("entities")
+            session_state["workflow_status"] = result.get("workflow_status")
+            
             # Retrieve final structured response
             final_response: AgentResponse = result.get("final_response")
             
@@ -136,6 +164,9 @@ if prompt := st.chat_input("Enter your request here (e.g. 'I want to track order
             logger.info(f"Intent: {result.get('intent')}")
             logger.info(f"Triage Action: {result.get('action')}")
             logger.info(f"Triage Reason: {result.get('reason')}")
+            logger.info(f"Workflow Status: {result.get('workflow_status')}")
+            logger.info(f"Missing Entity: {result.get('missing_entity')}")
+            logger.info(f"Entities: {result.get('entities')}")
             logger.info(f"Nodes Executed: {', '.join(trace.nodes_executed)}")
             logger.info(f"Tools Executed: {', '.join(trace.tools_executed)}")
             logger.info(f"Execution Order: {' -> '.join(trace.nodes_executed)}")
