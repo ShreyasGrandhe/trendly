@@ -11,7 +11,7 @@ from agents import create_intake_agent
 from models import AgentResponse, IntentEnum
 from utils.logger import logger
 from utils.observability import trace_node, pretty_format, LangChainObservabilityHandler
-from tools import order_lookup, policy_lookup, escalate
+from tools import order_lookup, policy_lookup, escalate, orders_service
 from prompts import GENERAL_SUPPORT_SYSTEM_PROMPT, RESOLUTION_SYSTEM_PROMPT
 
 # Instantiate triage agent
@@ -89,6 +89,41 @@ def parse_policy_json(raw_json: str) -> str:
     except Exception:
         return raw_json
 
+def verify_customer_authorization(state: ConversationState) -> bool:
+    """Enforce security policy: prevent discussing orders belonging to a different customer."""
+    order_id = state["entities"].get("order_id")
+    if not order_id:
+        return True
+
+    from models import OrderLookupRequest
+    try:
+        res = orders_service.find_orders(OrderLookupRequest(order_id=order_id))
+        if res.success and res.orders:
+            current_customer_id = res.orders[0].get("customer_id")
+            if current_customer_id:
+                cached_customer_id = state["entities"].get("customer_id")
+                if not cached_customer_id:
+                    # First order ID checked, cache the customer_id for this session
+                    state["entities"]["customer_id"] = current_customer_id
+                    logger.info(f"Authorization: Cached customer_id '{current_customer_id}' for session.")
+                elif cached_customer_id != current_customer_id:
+                    # customer_id mismatch, block access!
+                    decline_msg = f"I'm sorry, but I cannot discuss or provide information about order {order_id} as it belongs to a different customer."
+                    state["action"] = "respond"
+                    state["intent"] = "general"
+                    state["reason"] = "other"
+                    state["workflow_status"] = "completed"
+                    state["final_response"] = AgentResponse(
+                        message=decline_msg,
+                        requires_escalation=False
+                    )
+                    state["messages"].append(AIMessage(content=decline_msg))
+                    logger.warn(f"Authorization: Blocked cross-customer access. Attempted: {order_id} (Customer: {current_customer_id}) vs Session Customer: {cached_customer_id}")
+                    return False
+    except Exception as e:
+        logger.error(f"Error validating customer authorization: {e}")
+    return True
+
 
 @trace_node("Intake")
 def intake_node(state: ConversationState) -> ConversationState:
@@ -115,6 +150,8 @@ def intake_node(state: ConversationState) -> ConversationState:
                 state["action"] = "execute_workflow"
                 state["missing_entity"] = None
                 logger.info(f"Triage: Slot-filled missing entity 'order_id' with value '{order_id}'. Status updated to ready.")
+                if not verify_customer_authorization(state):
+                    return state
                 return state
             else:
                 logger.info("Triage: Waiting for Order ID but none matched in latest query. Re-triaging intent.")
@@ -182,6 +219,10 @@ def intake_node(state: ConversationState) -> ConversationState:
             if state.get("workflow_status") == "waiting_for_user":
                 state["workflow_status"] = "ready"
                 state["action"] = "execute_workflow"
+        
+        # Run authorization check
+        if not verify_customer_authorization(state):
+            return state
         
         # If the Intake Agent can respond immediately, record response and short-circuit
         if state["action"] == "respond":
