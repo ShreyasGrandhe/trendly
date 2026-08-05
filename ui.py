@@ -25,7 +25,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 /* Main font override */
-html, body, [class*="st-key"], [class*="st-"] {
+html, body, [class*="st-key"] {
     font-family: 'Inter', sans-serif !important;
 }
 
