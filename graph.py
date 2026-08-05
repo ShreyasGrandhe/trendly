@@ -24,7 +24,7 @@ MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 
 def extract_order_id(text: str) -> Optional[str]:
     """Extract and normalize Order ID from text, e.g. TR-4525 or 4525 -> TR-4525."""
-    match = re.search(r'\b(TR-)?\d{4}\b', text, re.IGNORECASE)
+    match = re.search(r'\b(TR-)?\d{4,}\b', text, re.IGNORECASE)
     if match:
         val = match.group(0).upper()
         if not val.startswith("TR-"):
@@ -90,7 +90,8 @@ def parse_policy_json(raw_json: str) -> str:
         return raw_json
 
 def verify_customer_authorization(state: ConversationState) -> bool:
-    """Enforce security policy: prevent discussing orders belonging to a different customer."""
+    """Enforce security policy: prevent discussing orders belonging to a different customer,
+    and validate that the order exists (re-prompting or escalating if not found)."""
     order_id = state["entities"].get("order_id")
     if not order_id:
         return True
@@ -98,7 +99,52 @@ def verify_customer_authorization(state: ConversationState) -> bool:
     from models import OrderLookupRequest
     try:
         res = orders_service.find_orders(OrderLookupRequest(order_id=order_id))
-        if res.success and res.orders:
+        if res.success:
+            if not res.orders:
+                # ORDER NOT FOUND!
+                not_found_count = state["entities"].get("not_found_count", 0) + 1
+                state["entities"]["not_found_count"] = not_found_count
+                
+                ticket_id = None
+                requires_escalation = False
+                
+                if not_found_count >= 2:
+                    # 2nd time: escalate!
+                    requires_escalation = True
+                    reason_text = f"Order ID {order_id} not found in Trendly order history after multiple attempts."
+                    esc_raw = escalate.invoke({
+                        "reason": reason_text,
+                        "summary": f"User attempted to locate order {order_id} but it does not exist in the database. Failed {not_found_count} times."
+                    })
+                    try:
+                        esc_data = json.loads(esc_raw)
+                        ticket_id = esc_data.get("ticket_id")
+                    except Exception as e:
+                        logger.error(f"Error parsing order not found escalation: {e}")
+                        
+                    response_text = f"I'm sorry, but I still cannot find order {order_id} in our system. I have escalated this issue to our human support team to help you locate your order details. Your escalation ticket ID is {ticket_id or 'ESC-SUPPORT'}."
+                else:
+                    # 1st time: ask to check and try again
+                    response_text = f"I'm sorry, but I couldn't find order {order_id} in our system. Could you please double-check the order number and let me know the correct one?"
+                    
+                state["action"] = "respond"
+                state["workflow_status"] = "waiting_for_user" if not requires_escalation else "completed"
+                state["missing_entity"] = "order_id" if not requires_escalation else None
+                
+                # Clear incorrect order_id so slot-filling can trigger next turn if not escalated
+                if not requires_escalation and "order_id" in state["entities"]:
+                    del state["entities"]["order_id"]
+                    
+                state["final_response"] = AgentResponse(
+                    message=response_text,
+                    requires_escalation=requires_escalation,
+                    ticket_id=ticket_id
+                )
+                state["messages"].append(AIMessage(content=response_text))
+                logger.warn(f"Authorization: Order ID {order_id} not found ({not_found_count} times).")
+                return False
+                
+            # If order exists, perform customer ID mismatch verification
             current_customer_id = res.orders[0].get("customer_id")
             if current_customer_id:
                 cached_customer_id = state["entities"].get("customer_id")
@@ -273,61 +319,6 @@ def intake_node(state: ConversationState) -> ConversationState:
     return state
 
 
-def handle_order_not_found(state: ConversationState, order_id: str, order_res_json: str) -> Optional[ConversationState]:
-    """Check if order was not found, and handle 1st time re-prompting / 2nd time escalation."""
-    try:
-        data = json.loads(order_res_json)
-        if data.get("success") and not data.get("orders"):
-            # Order not found!
-            not_found_count = state["entities"].get("not_found_count", 0) + 1
-            state["entities"]["not_found_count"] = not_found_count
-            
-            if not_found_count >= 2:
-                # 2nd time: escalate!
-                reason_text = f"Order ID {order_id} not found in Trendly order history after multiple attempts."
-                esc_raw = escalate.invoke({
-                    "reason": reason_text,
-                    "summary": f"User attempted to locate order {order_id} but it does not exist in the database. Failed {not_found_count} times."
-                })
-                ticket_id = None
-                try:
-                    esc_data = json.loads(esc_raw)
-                    ticket_id = esc_data.get("ticket_id")
-                except Exception as e:
-                    logger.error(f"Error parsing order not found escalation: {e}")
-                    
-                response_text = f"I'm sorry, but I still cannot find order {order_id} in our system. I have escalated this issue to our human support team to help you locate your order details. Your escalation ticket ID is {ticket_id or 'ESC-SUPPORT'}."
-                state["action"] = "respond"
-                state["workflow_status"] = "completed"
-                state["final_response"] = AgentResponse(
-                    message=response_text,
-                    requires_escalation=True,
-                    ticket_id=ticket_id
-                )
-                state["messages"].append(AIMessage(content=response_text))
-                logger.warn(f"Authorization: Order ID {order_id} not found ({not_found_count} times). Escalated.")
-                return state
-            else:
-                # 1st time: ask to check and try again
-                response_text = f"I'm sorry, but I couldn't find order {order_id} in our system. Could you please double-check the order number and let me know the correct one?"
-                state["action"] = "respond"
-                state["workflow_status"] = "waiting_for_user"
-                state["missing_entity"] = "order_id"
-                # Clear the incorrect order_id so slot-filling can trigger next turn
-                if "order_id" in state["entities"]:
-                    del state["entities"]["order_id"]
-                state["final_response"] = AgentResponse(
-                    message=response_text,
-                    requires_escalation=False
-                )
-                state["messages"].append(AIMessage(content=response_text))
-                logger.warn(f"Authorization: Order ID {order_id} not found (1st time). Resetting order_id slot.")
-                return state
-    except Exception as e:
-        logger.error(f"Error checking order lookup results: {e}")
-    return None
-
-
 @trace_node("General Support")
 def general_support_node(state: ConversationState) -> ConversationState:
     """Process query using deterministic tool pre-fetching based on state and a single LLM call."""
@@ -349,9 +340,6 @@ def general_support_node(state: ConversationState) -> ConversationState:
     # 2. Trigger Order Lookup if requires_order is true in persistent state and order ID is available
     if state.get("requires_order") and order_id:
         order_res = order_lookup.invoke({"order_id": order_id})
-        not_found_state = handle_order_not_found(state, order_id, order_res)
-        if not_found_state:
-            return not_found_state
         order_summary = summarize_order_json(order_res)
         context_parts.append(f"=== ORDER HISTORY DETAILS ===\n{order_summary}")
 
@@ -398,9 +386,6 @@ def resolution_node(state: ConversationState) -> ConversationState:
     # 1. Trigger Order Lookup if requires_order is true in persistent state and order ID is available
     if state.get("requires_order") and order_id:
         order_res = order_lookup.invoke({"order_id": order_id})
-        not_found_state = handle_order_not_found(state, order_id, order_res)
-        if not_found_state:
-            return not_found_state
         order_summary = summarize_order_json(order_res)
         context_parts.append(f"=== RELEVANT ORDER DETAILS ===\n{order_summary}")
         
