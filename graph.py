@@ -107,18 +107,42 @@ def verify_customer_authorization(state: ConversationState) -> bool:
                     state["entities"]["customer_id"] = current_customer_id
                     logger.info(f"Authorization: Cached customer_id '{current_customer_id}' for session.")
                 elif cached_customer_id != current_customer_id:
-                    # customer_id mismatch, block access!
-                    decline_msg = f"I'm sorry, but I cannot discuss or provide information about order {order_id} as it belongs to a different customer."
+                    # Increment decline count
+                    decline_count = state["entities"].get("decline_count", 0) + 1
+                    state["entities"]["decline_count"] = decline_count
+                    
+                    ticket_id = None
+                    requires_escalation = False
+                    
+                    if decline_count >= 3:
+                        requires_escalation = True
+                        esc_raw = escalate.invoke({
+                            "reason": f"Authorization verification discrepancies: user blocked {decline_count} times trying to access order {order_id} belonging to customer {current_customer_id}.",
+                            "summary": f"User attempted to query order {order_id} belonging to customer {current_customer_id}, which does not match session customer {cached_customer_id}. User was blocked {decline_count} times."
+                        })
+                        try:
+                            esc_data = json.loads(esc_raw)
+                            ticket_id = esc_data.get("ticket_id")
+                        except Exception as e:
+                            logger.error(f"Error parsing authorization escalation ticket: {e}")
+                            
+                        decline_msg = f"I understand this is frustrating, and I sincerely apologize for the inconvenience. Since we have encountered multiple authorization discrepancies for order {order_id}, I have escalated this issue to our human support team to assist you further. Your support ticket ID is {ticket_id or 'ESC-SUPPORT'}."
+                    elif decline_count == 2:
+                        decline_msg = f"I apologize for the restriction, but our security policy prevents me from sharing details about order {order_id} because the account associated with it does not match this session. If you believe this is an error, please let me know, or I can connect you with our support team."
+                    else:
+                        decline_msg = f"I'm sorry, but I cannot discuss or provide information about order {order_id} as it belongs to a different customer account."
+                        
                     state["action"] = "respond"
                     state["intent"] = "general"
                     state["reason"] = "other"
                     state["workflow_status"] = "completed"
                     state["final_response"] = AgentResponse(
                         message=decline_msg,
-                        requires_escalation=False
+                        requires_escalation=requires_escalation,
+                        ticket_id=ticket_id
                     )
                     state["messages"].append(AIMessage(content=decline_msg))
-                    logger.warn(f"Authorization: Blocked cross-customer access. Attempted: {order_id} (Customer: {current_customer_id}) vs Session Customer: {cached_customer_id}")
+                    logger.warn(f"Authorization: Blocked cross-customer access ({decline_count} times). Attempted: {order_id} (Customer: {current_customer_id}) vs Session Customer: {cached_customer_id}")
                     return False
     except Exception as e:
         logger.error(f"Error validating customer authorization: {e}")
