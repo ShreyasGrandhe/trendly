@@ -19,10 +19,16 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom Premium CSS Injection
+# Custom Premium CSS Injection - Forcing Light/White Theme
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* Force Light Theme Colors across app background & body text */
+.stApp {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
 
 /* Main font override */
 html, body, [class*="st-key"] {
@@ -31,13 +37,22 @@ html, body, [class*="st-key"] {
 
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif !important;
-    color: #1e293b;
+    color: #0f172a !important;
 }
 
-/* Sidebar premium branding */
+/* Sidebar light branding */
 [data-testid="stSidebar"] {
     background-color: #f8fafc !important;
     border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Sidebar elements text color fix */
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] span, 
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3 {
+    color: #0f172a !important;
 }
 
 /* Custom styled page header */
@@ -45,7 +60,7 @@ h1, h2, h3, h4, h5, h6 {
     background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%);
     padding: 30px;
     border-radius: 16px;
-    color: white;
+    color: white !important;
     margin-bottom: 28px;
     box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.15), 0 4px 6px -4px rgba(99, 102, 241, 0.15);
 }
@@ -62,12 +77,26 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 8px;
     margin-bottom: 0;
     line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Chat bubble styling overrides to look clean in light theme */
+[data-testid="stChatMessage"] {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+}
+[data-testid="stChatMessage"] p, 
+[data-testid="stChatMessage"] span, 
+[data-testid="stChatMessage"] div {
+    color: #0f172a !important;
 }
 
 /* State cards */
 .state-card {
-    background-color: white;
-    border: 1px solid #e2e8f0;
+    background-color: white !important;
+    border: 1px solid #e2e8f0 !important;
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
@@ -86,7 +115,7 @@ h1, h2, h3, h4, h5, h6 {
 .state-label {
     font-size: 13px;
     font-weight: 500;
-    color: #64748b;
+    color: #64748b !important;
 }
 
 /* Active Status Badges */
@@ -99,25 +128,25 @@ h1, h2, h3, h4, h5, h6 {
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
-.badge-intent-resolution { background-color: #fee2e2; color: #b91c1c; }
-.badge-intent-general { background-color: #e0e7ff; color: #4338ca; }
-.badge-intent-unclassified { background-color: #f1f5f9; color: #64748b; }
+.badge-intent-resolution { background-color: #fee2e2 !important; color: #b91c1c !important; }
+.badge-intent-general { background-color: #e0e7ff !important; color: #4338ca !important; }
+.badge-intent-unclassified { background-color: #f1f5f9 !important; color: #64748b !important; }
 
-.badge-action-respond { background-color: #dbeafe; color: #1e40af; }
-.badge-action-execute_workflow { background-color: #f3e8ff; color: #6b21a8; }
-.badge-action-none { background-color: #f1f5f9; color: #64748b; }
+.badge-action-respond { background-color: #dbeafe !important; color: #1e40af !important; }
+.badge-action-execute_workflow { background-color: #f3e8ff !important; color: #6b21a8 !important; }
+.badge-action-none { background-color: #f1f5f9 !important; color: #64748b !important; }
 
-.badge-status-ready { background-color: #dcfce7; color: #166534; }
-.badge-status-waiting_for_user { background-color: #fef3c7; color: #92400e; }
-.badge-status-completed { background-color: #f3e8ff; color: #6b21a8; }
-.badge-status-none { background-color: #f1f5f9; color: #64748b; }
+.badge-status-ready { background-color: #dcfce7 !important; color: #166534 !important; }
+.badge-status-waiting_for_user { background-color: #fef3c7 !important; color: #92400e !important; }
+.badge-status-completed { background-color: #f3e8ff !important; color: #6b21a8 !important; }
+.badge-status-none { background-color: #f1f5f9 !important; color: #64748b !important; }
 
-.badge-escalated { background-color: #fee2e2; color: #b91c1c; font-weight: 700; }
-.badge-resolved { background-color: #dcfce7; color: #166534; }
+.badge-escalated { background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 700; }
+.badge-resolved { background-color: #dcfce7 !important; color: #166534 !important; }
 
 .badge-entity {
-    background-color: #f1f5f9;
-    color: #334155;
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
     font-family: monospace;
     border-radius: 4px;
     padding: 2px 6px;
