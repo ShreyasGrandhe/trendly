@@ -135,6 +135,30 @@ h1, h2, h3, h4, h5, h6 {
     color: #0f172a !important;
 }
 
+/* Style input placeholders to be visible slate gray */
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1.0 !important;
+}
+[data-testid="stChatInput"] textarea::-webkit-input-placeholder {
+    color: #64748b !important;
+    opacity: 1.0 !important;
+}
+
+/* Style send button to be highly visible with indigo background and white arrow */
+[data-testid="stChatInput"] button {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+    opacity: 1.0 !important;
+}
+[data-testid="stChatInput"] button:hover {
+    background-color: #4338ca !important;
+}
+[data-testid="stChatInput"] button svg {
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
 /* State cards */
 .state-card {
     background-color: white !important;
