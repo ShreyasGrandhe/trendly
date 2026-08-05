@@ -1,0 +1,25 @@
+# AI Framework
+langgraph
+langchain
+langchain-core
+langchain-google-genai
+langchain-openai
+
+# Backend
+fastapi
+uvicorn
+
+# Frontend
+streamlit
+
+# Data Validation
+pydantic
+
+# Environment Variables
+python-dotenv
+
+# Utilities
+typing_extensions
+
+# Testing
+pytest
