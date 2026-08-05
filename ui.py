@@ -125,6 +125,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 /* Chat input wrapper layout styling */
 [data-testid="stChatInput"] > div {
+    position: relative !important;
     background-color: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
     border-radius: 12px !important;
@@ -143,6 +144,25 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stChatInput"] textarea::-webkit-input-placeholder {
     color: #64748b !important;
     opacity: 1.0 !important;
+}
+
+/* Always-blinking mock cursor right after placeholder text when empty and unfocused */
+[data-testid="stChatInput"] textarea:placeholder-shown:not(:focus) ~ button::before {
+    content: "|" !important;
+    position: absolute !important;
+    left: 220px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #4f46e5 !important;
+    font-weight: 400 !important;
+    font-size: 18px !important;
+    animation: cursor-blink 1s step-end infinite !important;
+    pointer-events: none !important;
+}
+
+@keyframes cursor-blink {
+    from, to { opacity: 0; }
+    50% { opacity: 1; }
 }
 
 /* Style send button to be highly visible with indigo background and white arrow */
