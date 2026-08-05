@@ -24,10 +24,12 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-/* Force Light Theme Colors across entire outer viewports & containers */
+/* Force Light Theme Colors across entire outer viewports, headers, and bottom sticky wrappers */
 html, body, 
 [data-testid="stAppViewContainer"], 
 [data-testid="stHeader"], 
+[data-testid="stBottom"],
+.stBottom,
 .stApp {
     background-color: #ffffff !important;
     color: #0f172a !important;
@@ -118,7 +120,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Chat input outer bar background color override to white */
-[data-testid="stChatInput"] {
+[data-testid="stChatInput"], [data-testid="stBottom"] > div {
     background-color: #ffffff !important;
 }
 /* Chat input textarea override */
