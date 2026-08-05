@@ -123,11 +123,16 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stChatInput"], [data-testid="stBottom"] > div {
     background-color: #ffffff !important;
 }
+/* Chat input wrapper layout styling */
+[data-testid="stChatInput"] > div {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+}
 /* Chat input textarea override */
-[data-testid="stChatInput"] textarea {
+[data-testid="stChatInput"] textarea, div[data-baseweb="textarea"] {
     background-color: #ffffff !important;
     color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
 }
 
 /* State cards */
@@ -338,7 +343,7 @@ for msg in session_state["messages"]:
             st.write(msg.content)
 
 # User Chat Input
-if prompt := st.chat_input("Enter your request here (e.g. 'I want to track order TR-4521')..."):
+if prompt := st.chat_input("How can I help you today?"):
     # Display user message
     with st.chat_message("user"):
         st.write(prompt)
