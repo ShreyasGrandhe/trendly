@@ -72,8 +72,13 @@ def summarize_order_json(raw_json: str) -> str:
         return (
             f"Order ID: {order.get('order_id')}\n"
             f"Status: {order.get('status')}\n"
+            f"Placed At: {order.get('placed_at')}\n"
+            f"Expected Delivery: {order.get('expected_delivery')}\n"
+            f"Carrier: {order.get('carrier')}\n"
+            f"Tracking Number: {order.get('tracking_number')}\n"
             f"Delivered At: {order.get('delivered_at')}\n"
             f"Payment Method: {order.get('payment_method')}\n"
+            f"Shipping City: {order.get('shipping_city')}\n"
             f"Items:\n" + "\n".join(items_summary)
         )
     except Exception as e:
