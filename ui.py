@@ -147,7 +147,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Always-blinking mock cursor right after placeholder text when empty and unfocused */
-[data-testid="stChatInput"] textarea:placeholder-shown:not(:focus) ~ button::before {
+[data-testid="stChatInput"] > div:has(textarea:placeholder-shown):not(:focus-within)::before {
     content: "|" !important;
     position: absolute !important;
     left: 220px !important;
@@ -156,8 +156,9 @@ h1, h2, h3, h4, h5, h6 {
     color: #4f46e5 !important;
     font-weight: 400 !important;
     font-size: 18px !important;
-    animation: cursor-blink 1s step-end infinite !important;
+    animation: cursor-blink 1.0s step-end infinite !important;
     pointer-events: none !important;
+    z-index: 10 !important;
 }
 
 @keyframes cursor-blink {
