@@ -69,6 +69,9 @@ def summarize_order_json(raw_json: str) -> str:
                 f"Price: {item.get('price')}, Final Sale: {item.get('final_sale')}"
             )
             
+        note_for_designers = order.get("_note_for_designers")
+        note_str = f"Designer Note: {note_for_designers}\n" if note_for_designers else ""
+
         return (
             f"Order ID: {order.get('order_id')}\n"
             f"Status: {order.get('status')}\n"
@@ -81,6 +84,7 @@ def summarize_order_json(raw_json: str) -> str:
             f"Refund Status: {order.get('refund_status')}\n"
             f"Payment Method: {order.get('payment_method')}\n"
             f"Shipping City: {order.get('shipping_city')}\n"
+            f"{note_str}"
             f"Items:\n" + "\n".join(items_summary)
         )
     except Exception as e:
