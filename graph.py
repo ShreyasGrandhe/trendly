@@ -308,12 +308,37 @@ def intake_node(state: ConversationState) -> ConversationState:
         # If the Intake Agent can respond immediately, record response and short-circuit
         if state["action"] == "respond":
             response_text = intake_val.response or ""
+            requires_escalation = False
+            ticket_id = None
+            
+            lower_msg = latest_msg.lower()
+            lower_resp = response_text.lower()
+            if ("human" in lower_msg or "escalat" in lower_msg or 
+                "connect you with a human" in lower_resp or "connect you to a human" in lower_resp or 
+                "human support agent" in lower_resp or "escalated to a human" in lower_resp):
+                
+                requires_escalation = True
+                logger.info("Intake Node: Human handoff requested. Running Escalation Tool.")
+                esc_raw = escalate.invoke({
+                    "reason": f"Intake Agent human handoff: {response_text}",
+                    "summary": f"User Query: {latest_msg}\nIntake response: {response_text}"
+                })
+                try:
+                    esc_data = json.loads(esc_raw)
+                    ticket_id = esc_data.get("ticket_id")
+                    if ticket_id and ticket_id not in response_text:
+                        response_text = f"{response_text} Your escalation ticket ID is {ticket_id}."
+                except Exception as e:
+                    logger.error(f"Error parsing intake escalation response: {e}")
+                    
             state["final_response"] = AgentResponse(
                 message=response_text,
-                requires_escalation=False
+                requires_escalation=requires_escalation,
+                ticket_id=ticket_id
             )
             state["messages"].append(AIMessage(content=response_text))
-            logger.info(f"Triage: Instant response ready. Short-circuiting workflow. Reason: {state['reason']}")
+            state["workflow_status"] = "completed" if requires_escalation else state["workflow_status"]
+            logger.info(f"Triage: Instant response ready. Short-circuiting workflow. Reason: {state['reason']}, Escalation: {requires_escalation}")
         else:
             logger.info(f"Triage: Downstream workflow ready. Proceeding to {state['intent']} node.")
     else:
