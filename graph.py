@@ -77,6 +77,8 @@ def summarize_order_json(raw_json: str) -> str:
             f"Carrier: {order.get('carrier')}\n"
             f"Tracking Number: {order.get('tracking_number')}\n"
             f"Delivered At: {order.get('delivered_at')}\n"
+            f"Cancelled At: {order.get('cancelled_at')}\n"
+            f"Refund Status: {order.get('refund_status')}\n"
             f"Payment Method: {order.get('payment_method')}\n"
             f"Shipping City: {order.get('shipping_city')}\n"
             f"Items:\n" + "\n".join(items_summary)
