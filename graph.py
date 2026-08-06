@@ -220,6 +220,50 @@ def intake_node(state: ConversationState) -> ConversationState:
     if "entities" not in state or state["entities"] is None:
         state["entities"] = {}
         
+    # Count policy-guided refusals/disapprovals in the conversational history
+    refusal_count = 0
+    refusal_keywords = [
+        "cannot return", "non-returnable", "not eligible", "cannot accept", 
+        "cannot process", "outside the return window", "not returnable",
+        "hygiene reasons", "final sale", "already cancelled"
+    ]
+    for m in state["messages"]:
+        if isinstance(m, AIMessage):
+            content_lower = m.content.lower()
+            if (any(kw in content_lower for kw in refusal_keywords) or
+                ("cannot" in content_lower and "return" in content_lower) or
+                ("not" in content_lower and "return" in content_lower and "eligible" in content_lower)):
+                refusal_count += 1
+                
+    # If customer has been refused 3 or more times and is still trying to get a return/refund/exchange
+    if refusal_count >= 3:
+        latest_lower = latest_msg.lower()
+        if any(kw in latest_lower for kw in ["return", "refund", "exchange", "send back", "money back", "replace", "cancel", "help me"]):
+            logger.info(f"Intake Node: Customer has received {refusal_count} policy refusals. Escalating automatically.")
+            esc_raw = escalate.invoke({
+                "reason": f"Automatic escalation after {refusal_count} policy refusals.",
+                "summary": f"User Query: {latest_msg}\nRefusal Count: {refusal_count}"
+            })
+            ticket_id = None
+            try:
+                esc_data = json.loads(esc_raw)
+                ticket_id = esc_data.get("ticket_id")
+            except Exception as e:
+                logger.error(f"Error parsing auto-escalation ticket: {e}")
+                
+            decline_msg = f"I understand this is frustrating, and I apologize that I cannot process this request under our standard policies. Since we have discussed this query multiple times, I have escalated this case to our human support team to review your request. Your support ticket ID is {ticket_id or 'ESC-SUPPORT'}."
+            state["action"] = "respond"
+            state["intent"] = "general"
+            state["reason"] = "other"
+            state["workflow_status"] = "completed"
+            state["final_response"] = AgentResponse(
+                message=decline_msg,
+                requires_escalation=True,
+                ticket_id=ticket_id
+            )
+            state["messages"].append(AIMessage(content=decline_msg))
+            return state
+        
     # Check if workflow is currently waiting for a missing entity (e.g. order_id)
     if state.get("workflow_status") == "waiting_for_user":
         missing = state.get("missing_entity")
